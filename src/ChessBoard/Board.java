@@ -776,6 +776,8 @@ public class Board {
 
     public boolean canMovePiece(Piece currentPiece, int[] newPosition) {
 
+        if (isPieceProtectingKing(currentPiece, getKing(currentPiece).getPosition())) return false;
+
         return switch (currentPiece.getType()) {
             case ROOK -> legalMoveRook(currentPiece, newPosition)
                     && pieceNotBlockingRook(currentPiece, currentPiece.getPosition(), newPosition);
@@ -787,6 +789,129 @@ public class Board {
             default -> legalMovePawn(currentPiece, newPosition)
                     && pieceNotBlockingPawn(currentPiece, currentPiece.getPosition(), newPosition);
         };
+    }
+
+    public boolean isPieceProtectingKing(Piece piece, int[] kingSquare) {
+        int[] piecePosition = piece.getPosition();
+        Colour pieceColour = piece.getColour();
+        int kingRow = kingSquare[0], kingColumn = kingSquare[1];
+        int pieceRow = piecePosition[0], pieceColumn = piecePosition[1];
+        // Get the pieces of the opponent colour
+        List<Piece> attackingPieces = (pieceColour == Colour.WHITE) ? getBlackPieces() : getWhitePieces();
+
+        // Check if the piece is blocking the path of the attacking pieces
+        for (Piece attackingPiece : attackingPieces) {
+            int[] attackingPieceSquare = attackingPiece.getPosition();
+            int attackingPieceRow = attackingPieceSquare[0];
+            int attackingPieceColumn = attackingPieceSquare[1];
+
+            // Check if the attacking piece and the king are in the same row
+            if (attackingPiece.getType() == PieceType.ROOK || attackingPiece.getType() == PieceType.QUEEN) {
+                if (attackingPieceRow == kingRow && attackingPiece.getType() != PieceType.KING) {
+//                    System.out.println(attackingPiece);
+                    int minColumn = Math.min(attackingPieceColumn, kingColumn);
+                    int maxColumn = Math.max(attackingPieceColumn, kingColumn);
+                    if (pieceRow == attackingPieceRow && pieceColumn > minColumn && pieceColumn < maxColumn) {
+                        if (isPathClear(attackingPieceSquare, piecePosition)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+
+            // Check if the attacking piece and the king are in the same column
+            if (attackingPiece.getType() == PieceType.ROOK || attackingPiece.getType() == PieceType.QUEEN) {
+                if (attackingPieceColumn == kingColumn && attackingPiece.getType() != PieceType.KING) {
+//                    System.out.println(attackingPiece);
+                    int minRow = Math.min(attackingPieceRow, kingRow);
+                    int maxRow = Math.max(attackingPieceRow, kingRow);
+                    if (pieceColumn == attackingPieceColumn && pieceRow > minRow && pieceRow < maxRow) {
+                        if (isPathClear(attackingPieceSquare, piecePosition)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            // Check if the attacking piece and the king are in the same diagonal
+            if (attackingPiece.getType() == PieceType.BISHOP || attackingPiece.getType() == PieceType.QUEEN) {
+                if (Math.abs(attackingPieceRow - kingRow) == Math.abs(attackingPieceColumn - kingColumn)) {
+//                    System.out.println(attackingPiece);
+                    int minRow = Math.min(attackingPieceRow, kingRow);
+                    int maxRow = Math.max(attackingPieceRow, kingRow);
+                    int minColumn = Math.min(attackingPieceColumn, kingColumn);
+                    int maxColumn = Math.max(attackingPieceColumn, kingColumn);
+                    if (pieceRow > minRow && pieceRow < maxRow && pieceColumn > minColumn && pieceColumn < maxColumn) {
+                        if (isDiagonalPathClear(attackingPieceSquare, piecePosition)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+    // need to write is path clear functions
+    public boolean isPathClear(int[] startSquare, int[] endSquare) {
+        int startRow = startSquare[0];
+        int startColumn = startSquare[1];
+        int endRow = endSquare[0];
+        int endColumn = endSquare[1];
+
+        // Check if the start and end squares are in the same row
+        if (startRow == endRow) {
+            int minColumn = Math.min(startColumn, endColumn);
+            int maxColumn = Math.max(startColumn, endColumn);
+            for (int i = minColumn + 1; i < maxColumn; i++) {
+                if (getSquares()[startRow][i].getCurrentPiece() != null) {
+                    return false;
+                }
+            }
+        }
+
+        // Check if the start and end squares are in the same column
+        if (startColumn == endColumn) {
+            int minRow = Math.min(startRow, endRow);
+            int maxRow = Math.max(startRow, endRow);
+            for (int i = minRow + 1; i < maxRow; i++) {
+                if (getSquares()[i][startColumn].getCurrentPiece() != null) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public boolean isDiagonalPathClear(int[] startSquare, int[] endSquare) {
+        int startRow = startSquare[0];
+        int startColumn = startSquare[1];
+        int endRow = endSquare[0];
+        int endColumn = endSquare[1];
+
+        // Check if the start and end squares are not in the same diagonal
+        if (Math.abs(startRow - endRow) != Math.abs(startColumn - endColumn)) {
+            return false;
+        }
+
+        int rowDirection = (startRow < endRow) ? 1 : -1;
+        int columnDirection = (startColumn < endColumn) ? 1 : -1;
+
+        int row = startRow + rowDirection;
+        int column = startColumn + columnDirection;
+        while (row != endRow) {
+            if (getSquares()[row][column].getCurrentPiece() != null) {
+                return false;
+            }
+            row += rowDirection;
+            column += columnDirection;
+        }
+
+        return true;
     }
 
     public Piece getKingInCheck() {
@@ -807,11 +932,27 @@ public class Board {
         return king;
     }
 
+    private Piece getKing(Piece currentPiece) {
+        var sameColourPieces = currentPiece.getColour() == Colour.WHITE ? getWhitePieces() : getBlackPieces();
+
+        Piece king = null;
+
+        for (Piece p : sameColourPieces) {
+            if (p.getType() == PieceType.KING) {
+                king = p;
+            }
+        }
+
+        return king;
+    }
+
     public boolean legalMovePawn(Piece piece, int[] newPosition) {
         int currentY = piece.getPosition()[0], currentX = piece.getPosition()[1];
         int nextY = newPosition[0], nextX = newPosition[1];
         int differenceY = nextY - currentY;
         int differenceX = nextX - currentX;
+
+//        if (isPieceProtectingKing(piece, getKing(piece).getPosition())) return false;
 
         if (differenceX != 1 && differenceX != -1 && differenceX != 0) return false;
 
@@ -1222,6 +1363,8 @@ public class Board {
     public void movePieceClicked(int[] currentPos, int[] newPos) throws IOException, FontFormatException {
         Piece currentPiece = getSquares()[currentPos[0]][currentPos[1]].getCurrentPiece();
         Piece newPiece = null;
+
+//        if (isPieceProtectingKing(currentPiece, getKing(currentPiece).getPosition())) System.out.println(currentPiece);
 
         // handles not being able to capture king
         boolean kingPresent = false;

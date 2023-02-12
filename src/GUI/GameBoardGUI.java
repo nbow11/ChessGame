@@ -117,11 +117,11 @@ public class GameBoardGUI extends JPanel implements ActionListener, MouseListene
             }
         };
         var blackMoves = new Timer(delayTime, playComputer);
-        blackMoves.start();
-
-        if (getCurrentBoard().isCheckMate()) {
-            blackMoves.stop();
-        }
+//        blackMoves.start();
+//
+//        if (getCurrentBoard().isCheckMate()) {
+//            blackMoves.stop();
+//        }
     }
 
     public void drawBoard() {
