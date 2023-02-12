@@ -776,7 +776,7 @@ public class Board {
 
     public boolean canMovePiece(Piece currentPiece, int[] newPosition) {
 
-        if (isPieceProtectingKing(currentPiece, getKing(currentPiece).getPosition())) return false;
+        if (isPieceProtectingKing(currentPiece, getKing(currentPiece).getPosition(), newPosition)) return false;
 
         return switch (currentPiece.getType()) {
             case ROOK -> legalMoveRook(currentPiece, newPosition)
@@ -791,7 +791,7 @@ public class Board {
         };
     }
 
-    public boolean isPieceProtectingKing(Piece piece, int[] kingSquare) {
+    public boolean isPieceProtectingKing(Piece piece, int[] kingSquare, int[] newPosition) {
         int[] piecePosition = piece.getPosition();
         Colour pieceColour = piece.getColour();
         int kingRow = kingSquare[0], kingColumn = kingSquare[1];
@@ -808,11 +808,12 @@ public class Board {
             // Check if the attacking piece and the king are in the same row
             if (attackingPiece.getType() == PieceType.ROOK || attackingPiece.getType() == PieceType.QUEEN) {
                 if (attackingPieceRow == kingRow && attackingPiece.getType() != PieceType.KING) {
-//                    System.out.println(attackingPiece);
                     int minColumn = Math.min(attackingPieceColumn, kingColumn);
                     int maxColumn = Math.max(attackingPieceColumn, kingColumn);
                     if (pieceRow == attackingPieceRow && pieceColumn > minColumn && pieceColumn < maxColumn) {
-                        if (isPathClear(attackingPieceSquare, piecePosition)) {
+                        // Check if newPosition is in same row and path is clear
+                        if (isPathClear(attackingPieceSquare, piecePosition)
+                                && newPosition[0] != attackingPieceRow) {
                             return true;
                         }
                     }
@@ -823,11 +824,12 @@ public class Board {
             // Check if the attacking piece and the king are in the same column
             if (attackingPiece.getType() == PieceType.ROOK || attackingPiece.getType() == PieceType.QUEEN) {
                 if (attackingPieceColumn == kingColumn && attackingPiece.getType() != PieceType.KING) {
-//                    System.out.println(attackingPiece);
                     int minRow = Math.min(attackingPieceRow, kingRow);
                     int maxRow = Math.max(attackingPieceRow, kingRow);
                     if (pieceColumn == attackingPieceColumn && pieceRow > minRow && pieceRow < maxRow) {
-                        if (isPathClear(attackingPieceSquare, piecePosition)) {
+                        // Check if newPosition is in same row and path is clear
+                        if (isPathClear(attackingPieceSquare, piecePosition)
+                                && newPosition[1] != attackingPieceColumn) {
                             return true;
                         }
                     }
@@ -837,13 +839,14 @@ public class Board {
             // Check if the attacking piece and the king are in the same diagonal
             if (attackingPiece.getType() == PieceType.BISHOP || attackingPiece.getType() == PieceType.QUEEN) {
                 if (Math.abs(attackingPieceRow - kingRow) == Math.abs(attackingPieceColumn - kingColumn)) {
-//                    System.out.println(attackingPiece);
                     int minRow = Math.min(attackingPieceRow, kingRow);
                     int maxRow = Math.max(attackingPieceRow, kingRow);
                     int minColumn = Math.min(attackingPieceColumn, kingColumn);
                     int maxColumn = Math.max(attackingPieceColumn, kingColumn);
                     if (pieceRow > minRow && pieceRow < maxRow && pieceColumn > minColumn && pieceColumn < maxColumn) {
-                        if (isDiagonalPathClear(attackingPieceSquare, piecePosition)) {
+                        // check if piece moving on same diagonal and path is clear
+                        if (isDiagonalPathClear(attackingPieceSquare, piecePosition)
+                                && (Math.abs(newPosition[0] - attackingPieceRow) != Math.abs(newPosition[1] - attackingPieceColumn))) {
                             return true;
                         }
                     }
