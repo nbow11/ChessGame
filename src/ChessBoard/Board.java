@@ -197,32 +197,53 @@ public class Board {
 
     // check if piece in the same rank when trying to move
     public boolean pieceNotBlockingPawn(Piece piece, int[] currentPosition, int[] newPosition) {
-
-        // get opposite colour pieces
-        var pieces
-                = piece.getColour() == Colour.WHITE ? getWhitePieces() : getBlackPieces();
+        // get opposite colour pieces and same colour pieces
+        var oppositePieces = piece.getColour() == Colour.WHITE ? getBlackPieces() : getWhitePieces();
+        var samePieces = piece.getColour() == Colour.WHITE ? getWhitePieces() : getBlackPieces();
         int currentVertical = currentPosition[0], currentHorizontal = currentPosition[1];
         var occupiedSquares = new ArrayList<Piece>();
 
-        for (Piece p : pieces) {
+        for (Piece p : oppositePieces) {
+            if (p.getXCoordinate() == currentHorizontal) occupiedSquares.add(p);
+        }
+
+        for (Piece p : samePieces) {
             if (p.getXCoordinate() == currentHorizontal) occupiedSquares.add(p);
         }
 
         int newVertical = newPosition[0];
 
+        int horizontalDifference = Math.abs(currentPosition[1] - newPosition[1]);
+
+        boolean pieceInFront = false;
+
         // check if piece directly in front
         for (Piece p : occupiedSquares) {
-            if (p.getYCoordinate() == newPosition[0]) return false;
+            if (p.getYCoordinate() == newPosition[0]) {
+                if (horizontalDifference != 1) {
+                    return false;
+                }
+                pieceInFront = true;
+            }
 
             if (piece.getColour() == Colour.WHITE) {
-                if (p.getYCoordinate() < currentVertical && p.getYCoordinate() > newVertical) return false;
+                if (p.getYCoordinate() < currentVertical && p.getYCoordinate() > newVertical) {
+                    return false;
+                }
             } else {
-                if (p.getYCoordinate() > currentVertical && p.getYCoordinate() < newVertical) return false;
+                if (p.getYCoordinate() > currentVertical && p.getYCoordinate() < newVertical) {
+                    return false;
+                }
             }
+        }
+
+        if (pieceInFront && horizontalDifference != 1) {
+            return false;
         }
 
         return true;
     }
+
 
     public boolean pieceNotBlockingRook(Piece piece, int[] currentPosition, int[] newPosition) {
         int currentY = currentPosition[0], currentX = currentPosition[1];
@@ -423,9 +444,9 @@ public class Board {
 
     }
 
-    private boolean bottomLeftBishopMove(int[] currentPosition,
-                                  int[] newPosition, int differenceY,
-                                  int differenceX) {
+    private boolean bottomLeftBishopMove
+            (int[] currentPosition, int[] newPosition,
+             int differenceY, int differenceX) {
 
         int val = Math.abs(Math.min(differenceX, differenceY));
         Piece closestPiece = null;
@@ -955,8 +976,6 @@ public class Board {
         int differenceY = nextY - currentY;
         int differenceX = nextX - currentX;
 
-//        if (isPieceProtectingKing(piece, getKing(piece).getPosition())) return false;
-
         if (differenceX != 1 && differenceX != -1 && differenceX != 0) return false;
 
         if (!canCaptureOrEmpty(piece, newPosition)) return false;
@@ -1301,7 +1320,7 @@ public class Board {
 
     private void castleRightWhite() {
         int [] newRookPos = new int[] {7, 5};
-        Piece whiteRookRight = getWhitePieces().get(7);
+        Piece whiteRookRight = getSquares()[7][7].getCurrentPiece();
         int[] oldPosRook = whiteRookRight.getPosition();
         whiteRookRight.movePiece(newRookPos);
         getSquares()[newRookPos[0]][newRookPos[1]].setCurrentPiece(whiteRookRight);
@@ -1310,7 +1329,7 @@ public class Board {
 
     private void castleRightBlack() {
         int [] newRookPos = new int[] {0, 5};
-        Piece blackRookRight = getBlackPieces().get(7);
+        Piece blackRookRight = getSquares()[0][7].getCurrentPiece();
         int[] oldPosRook = blackRookRight.getPosition();
         blackRookRight.movePiece(newRookPos);
         getSquares()[newRookPos[0]][newRookPos[1]].setCurrentPiece(blackRookRight);
@@ -1319,19 +1338,19 @@ public class Board {
 
     private void castleLeftWhite() {
         int [] newRookPos = new int[] {7, 3};
-        Piece whiteRookRight = getWhitePieces().get(0);
-        int[] oldPosRook = whiteRookRight.getPosition();
-        whiteRookRight.movePiece(newRookPos);
-        getSquares()[newRookPos[0]][newRookPos[1]].setCurrentPiece(whiteRookRight);
+        Piece whiteRookLeft = getSquares()[7][0].getCurrentPiece();
+        int[] oldPosRook = whiteRookLeft.getPosition();
+        whiteRookLeft.movePiece(newRookPos);
+        getSquares()[newRookPos[0]][newRookPos[1]].setCurrentPiece(whiteRookLeft);
         getSquares()[oldPosRook[0]][oldPosRook[1]].setCurrentPiece(null);
     }
 
     private void castleLeftBlack() {
         int [] newRookPos = new int[] {0, 3};
-        Piece blackRookRight = getBlackPieces().get(0);
-        int[] oldPosRook = blackRookRight.getPosition();
-        blackRookRight.movePiece(newRookPos);
-        getSquares()[newRookPos[0]][newRookPos[1]].setCurrentPiece(blackRookRight);
+        Piece blackRookLeft = getSquares()[0][0].getCurrentPiece();
+        int[] oldPosRook = blackRookLeft.getPosition();
+        blackRookLeft.movePiece(newRookPos);
+        getSquares()[newRookPos[0]][newRookPos[1]].setCurrentPiece(blackRookLeft);
         getSquares()[oldPosRook[0]][oldPosRook[1]].setCurrentPiece(null);
     }
 
